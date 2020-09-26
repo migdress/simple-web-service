@@ -1,0 +1,37 @@
+service: create-user
+
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+custom: 
+  config: ${file(../config.${self:provider.stage}.yml):config}
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  runtime: go1.x
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:${self:custom.config.account}:table/${self:custom.config.dynamodb_users}
+        - arn:aws:dynamodb:${self:provider.region}:${self:custom.config.account}:table/${self:custom.config.dynamodb_users}/index/*
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+
+
+functions:
+  v1:
+    handler: bin/v1
+    events:
+      - http:
+          path: v1
+          method: post
+
